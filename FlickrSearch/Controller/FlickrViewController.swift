@@ -35,6 +35,8 @@ class FlickrViewController: UICollectionViewController {
     /// the current height of the keyboard
     var keyboardHeightValue: CGFloat = 0
     
+    var currentPage = 1
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         collectionView.backgroundColor = .white
@@ -116,10 +118,16 @@ class FlickrViewController: UICollectionViewController {
     /// used to retrieve data from the API.
     private func retrieveData(searchText: String, nextPage: Bool) {
         self.searchText.accept(searchText)
-        print("SEARCH TEXT: \(searchText)")
-        let page = nextPage ? pageNumbers.first : pageNumbers.next
-        let resource = CodableResource<FlickrResponseContainer>(searchText: searchText, pageNumber: page)
+        
+        //
+        if nextPage == false {
+            currentPage = 1
+        }
+        
+        
+        let resource = CodableResource<FlickrResponseContainer>(searchText: searchText, pageNumber: currentPage)
         // very quickly we've devloped a scalable api for handle our network requests
+        
         URLSession.shared.load(resource) { [weak self] result in
             guard let self = self else { return }
             switch result {
@@ -128,7 +136,7 @@ class FlickrViewController: UICollectionViewController {
                 if !nextPage {
                     self.images.removeAll()
                 }
-                
+                self.currentPage += 1
                 self.images.append(contentsOf: photos)
                 
                 // back to the main thread
@@ -202,9 +210,6 @@ extension FlickrViewController: UISearchBarDelegate {
     }
     
     func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
-        if let text = searchBar.searchTextField.text {
-            
-        }
         keyboardIsActive.accept(false)
         searchBar.searchTextField.text = nil
     }
