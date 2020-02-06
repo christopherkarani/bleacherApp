@@ -52,6 +52,7 @@ class FlickrViewController: UICollectionViewController {
         searchHistoryView.backgroundColor = .init(white: 0.94, alpha: 1)
         searchHistoryView.translatesAutoresizingMaskIntoConstraints = false
         searchHistoryViewBottomAnchor = searchHistoryView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor)
+        searchHistoryView.isHidden = true
         NSLayoutConstraint.activate([
             searchHistoryViewBottomAnchor!,
             searchHistoryView.widthAnchor.constraint(equalTo: view.widthAnchor),

@@ -21,7 +21,6 @@ class FlickrConstants: NSObject {
     static let per_page = 60
     static let searchURL =
     """
-
     https://api.flickr.com/services/rest/?method=flickr.photos.search&api_key=\(FlickrConstants.apiKey())&format=json&nojsoncallback=1&safe_search=1&per_page=\(FlickrConstants.per_page)&text=%@&page=%ld
     """
     static let thumbnailImageURL = "https://farm%d.staticflickr.com/%@/%@_%@_\(FlickrConstants.size.url_t.value).jpg"

@@ -44,7 +44,7 @@ extension CodableResource where T: Codable {
 extension CodableResource {
     init(searchText: String, pageNumber: Int) {
         let urlString = String(format: FlickrConstants.searchURL, searchText, pageNumber)
-        let url = URL(string: urlString) ?? URL(string: "")!
+        let url = URL(string: urlString)!
         self.init(url: url)
     }
 }
