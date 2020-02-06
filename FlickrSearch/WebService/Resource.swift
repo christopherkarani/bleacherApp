@@ -35,7 +35,6 @@ public struct CodableResource<T: Codable>: Resource {
 extension CodableResource where T: Codable {
     init(url: URL) {
         self.init(url: url) { data in
-            print(url.absoluteString)
             return try! JSONDecoder().decode(T.self, from: data)
         }
     }
@@ -44,8 +43,11 @@ extension CodableResource where T: Codable {
 extension CodableResource {
     init(searchText: String, pageNumber: Int) {
         let urlString = String(format: FlickrConstants.searchURL, searchText, pageNumber)
-        let url = URL(string: urlString)!
-        self.init(url: url)
+        if let url = URL(string: urlString) {
+             self.init(url: url)
+        } else {
+            fatalError("Error: \(urlString)")
+        }
     }
 }
 
