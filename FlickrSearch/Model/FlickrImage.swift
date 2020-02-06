@@ -47,7 +47,4 @@ struct FlickrImage: Codable, Equatable {
     }
 }
 
-struct FlickrImageSearchResults: Codable {
-    let stat: String?
-    let photos: FlickrResponse?
-}
+

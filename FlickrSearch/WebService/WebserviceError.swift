@@ -31,8 +31,6 @@ extension WebserviceError: CustomDebugStringConvertible {
             return "Status Code Error: \(String(code))"
         }
     }
-    
-    
 }
 
 func logError<A>(_ result: Result<A, WebserviceError>) {
