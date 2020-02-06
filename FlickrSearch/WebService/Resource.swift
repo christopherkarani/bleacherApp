@@ -35,6 +35,7 @@ public struct CodableResource<T: Codable>: Resource {
 extension CodableResource where T: Codable {
     init(url: URL) {
         self.init(url: url) { data in
+            print(url.absoluteString)
             return try! JSONDecoder().decode(T.self, from: data)
         }
     }

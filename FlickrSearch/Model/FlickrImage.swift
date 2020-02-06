@@ -19,11 +19,9 @@ enum ImageSize {
 struct FlickrImage: Codable, Equatable {
     let farm : Int
     let id : String
-    
     let isfamily : Int
     let isfriend : Int
     let ispublic : Int
-    
     let owner: String
     let secret : String
     let server : String
