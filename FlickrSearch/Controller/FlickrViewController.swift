@@ -14,31 +14,38 @@ import TagListView
 
 
 class FlickrViewController: UICollectionViewController {
+    
     lazy var searchBar = UISearchBar(frame: .zero)
+    /// the view that displays past search terms
     let searchHistoryView = SearchHistoryView()
+    /// a collection of search terms from the past
     var searchTermHistory: [String] = []
-    private(set) var photoArray = [FlickrImage]()
+    /// the main collection this view manages
+    private(set) var images = [FlickrImage]()
+    /// the search text input by the user
     let searchText = BehaviorRelay(value: "")
+    /// page numbers used for loading more images when neccesary
     private var pageNumbers = (first: 1, next: 2)
+    /// used to get rid of resources we're not usuing anymore
     private let disposeBag = DisposeBag()
+    /// we use this to control the `Y Axis ` of the searchHistoryView
     var searchHistoryViewBottomAnchor: NSLayoutConstraint!
+    /// we need this to observse keyboard behavior when presented
     var keyboardIsActive = BehaviorRelay(value: false)
+    /// the current height of the keyboard
     var keyboardHeightValue: CGFloat = 0
-
-        // data source
-        var images = [FlickrImage]()
-        
-        override func viewDidLoad() {
-            super.viewDidLoad()
-            collectionView.backgroundColor = .white
-            navigationItem.titleView = searchBar
-            searchBar.delegate = self
-            setupCells()
-            rxSearchBarSetup()
-            setupSearchHistoryiew()
-            setupRxKeyboard()
-            searchHistoryView.taglistView.delegate = self
-        }
+    
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        collectionView.backgroundColor = .white
+        navigationItem.titleView = searchBar
+        searchBar.delegate = self
+        setupCells()
+        rxSearchBarSetup()
+        setupSearchHistoryiew()
+        setupRxKeyboard()
+        searchHistoryView.taglistView.delegate = self
+    }
     
     private func setupSearchHistoryiew()  {
         view.addSubview(searchHistoryView)
@@ -53,11 +60,11 @@ class FlickrViewController: UICollectionViewController {
         ])
         
     }
-        
-        /// Register Custom Cells
-        private func setupCells() {
-            collectionView.register(FlirckrImageCell.self, forCellWithReuseIdentifier: FlirckrImageCell.cellID)
-        }
+    
+    /// Register Custom Cells
+    private func setupCells() {
+        collectionView.register(FlirckrImageCell.self, forCellWithReuseIdentifier: FlirckrImageCell.cellID)
+    }
     
     
     private func setupRxKeyboard() {
@@ -92,96 +99,101 @@ class FlickrViewController: UICollectionViewController {
         searchBar
             .rx.text // Observable property thanks to RxCocoa
             .orEmpty // Make it non-optional
-            .throttle(3, scheduler: MainScheduler.instance)// Wait 3 for changes.
+            .throttle(3, scheduler: MainScheduler.instance)// Wait 3 for seconds.
             .distinctUntilChanged() // If they didn't occur, check if the new value is the same as old.
             .filter { $0.count > 2 } // If the new value is really new, filter for non-empty query.
             .subscribe(onNext: { [unowned self] query in // Here we subscribe to every new value, that is not empty (thanks to filter above).
                 self.searchText.accept(query)
                 self.searchHistoryView.addTagToStack(string: query)
-                self.retrieveData(searchText: query, nextPage: false) // We now do our "API Request" to find cities.
+                self.retrieveData(searchText: query, nextPage: false) // We now do our "API Request" to retrieve Images from the Flickr API
             })
             .disposed(by: disposeBag)
         
     }
-        
-        
-        /// used to retrieve data from the API.
+    
+    
+    /// used to retrieve data from the API.
     private func retrieveData(searchText: String, nextPage: Bool) {
         let page = nextPage ? pageNumbers.first : pageNumbers.next
         let resource = CodableResource<FlickrResponseContainer>(searchText: searchText, pageNumber: page)
-            // very quickly we've devloped a scalable api for handle our network requests
-            URLSession.shared.load(resource) { [weak self] result in
-                guard let self = self else { return }
-                switch result {
-                case .success(let response):
-                    let photos = response.photos.photo
-                    if !nextPage {
-                         self.images.removeAll()
-                    }
-                   
-                    self.images.append(contentsOf: photos)
-                    
-                    // back to the main thread
-                    DispatchQueue.main.async { [unowned self] in
-                        self.collectionView.reloadData()
-                    }
-                    print(self.images.count)
-                case .failure(let error):
-                    print(error.localizedDescription)
+        // very quickly we've devloped a scalable api for handle our network requests
+        URLSession.shared.load(resource) { [weak self] result in
+            guard let self = self else { return }
+            switch result {
+            case .success(let response):
+                let photos = response.photos.photo
+                if !nextPage {
+                    self.images.removeAll()
                 }
-                print("done")
+                
+                self.images.append(contentsOf: photos)
+                
+                // back to the main thread
+                DispatchQueue.main.async { [unowned self] in
+                    self.collectionView.reloadData()
+                }
+                print(self.images.count)
+            case .failure(let error):
+                print(error.localizedDescription)
+                #if DEBUG
+                fatalError(error.debugDescription)
+                #endif
             }
         }
     }
+}
 
 
 
 
-    extension FlickrViewController: UICollectionViewDelegateFlowLayout {
-        /// number of cells to display
-        override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
-            print(images.count)
+extension FlickrViewController: UICollectionViewDelegateFlowLayout {
+    /// number of cells to display
+    override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+        if images.count == 0 {
+            self.collectionView.setEmptyMessage("Search Something...")
+            return images.count
+        } else {
             return images.count
         }
+    }
+    
+    /// handles cell sizing, currently has an arbitrary size
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
+        let numberOfColumns : CGFloat = 3
+        return CGSize(width: (collectionView.bounds.width - 2)/numberOfColumns, height: (collectionView.bounds.width - 2)/numberOfColumns)
+    }
+    /// rendering of the cell
+    override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
+        let flickrImage = images[indexPath.item]
+        let cell = collectionView.dequeueReusableCell(withReuseIdentifier: FlirckrImageCell.cellID, for: indexPath) as! FlirckrImageCell
+        cell.flickrImage = flickrImage
         
-        /// handles cell sizing, currently has an arbitrary size
-        func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-            let numberOfColumns : CGFloat = 3
-            return CGSize(width: (collectionView.bounds.width - 2)/numberOfColumns, height: (collectionView.bounds.width - 2)/numberOfColumns)
+        if indexPath.row == (images.count - 10) {
+            retrieveData(searchText: searchText.value, nextPage: true)
         }
-        /// rendering of the cell
-        override func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
-            let flickrImage = images[indexPath.item]
-            let cell = collectionView.dequeueReusableCell(withReuseIdentifier: FlirckrImageCell.cellID, for: indexPath) as! FlirckrImageCell
-            cell.flickrImage = flickrImage
-            
-            if indexPath.row == (images.count - 10) {
-                retrieveData(searchText: searchText.value, nextPage: true)
-            }
-            return cell
-        }
-        
-        
-        func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
-            return 1
-        }
-        
-        func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
-            return 1
-        }
-        
-        override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-            let image = images[indexPath.item]
-            let viewcontroller = FlickrImageDetailViewController()
-            viewcontroller.flckrImage = image
-            navigationController?.pushViewController(viewcontroller, animated: true)
-        }
+        return cell
+    }
+    
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
+        return 1
+    }
+    
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
+        return 1
+    }
+    
+    override func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        let image = images[indexPath.item]
+        let viewcontroller = FlickrImageDetailViewController()
+        viewcontroller.flckrImage = image
+        navigationController?.pushViewController(viewcontroller, animated: true)
+    }
 }
 
 
 
 extension FlickrViewController: UISearchBarDelegate {
-    
     func searchBarTextDidBeginEditing(_ searchBar: UISearchBar) {
         keyboardIsActive.accept(true)
     }
@@ -194,6 +206,7 @@ extension FlickrViewController: UISearchBarDelegate {
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         if let text = searchBar.text, text.count > 2 {
             searchHistoryView.addTagToStack(string: text)
+            retrieveData(searchText: text, nextPage: false)
         }
         searchBar.searchTextField.text = nil
         searchBar.resignFirstResponder()

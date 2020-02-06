@@ -7,3 +7,16 @@
 //
 
 import Foundation
+
+struct FlickrResponseContainer: Codable {
+    var photos: FlickrResponse
+    var stat: String
+}
+
+struct FlickrResponse: Codable {
+    let page: Int
+    let pages: Int
+    let perpage: Int
+    let photo: [FlickrImage]
+    let total: String
+}
