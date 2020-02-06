@@ -10,6 +10,8 @@ Use the package manager `cocoapods` to install Application via `pod install`.
 pod install
 ```
 
+Set your API Key with enviroment Variable `APIKEY`
+
 ## Usage
 
 Begin By searching Images and selecting your favourite image out of the collection,
