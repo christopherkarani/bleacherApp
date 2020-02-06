@@ -35,7 +35,11 @@ public struct CodableResource<T: Codable>: Resource {
 extension CodableResource where T: Codable {
     init(url: URL) {
         self.init(url: url) { data in
-            return try! JSONDecoder().decode(T.self, from: data)
+            guard let obj = try? JSONDecoder().decode(T.self, from: data) else {
+                let jsonResp = String.init(data: data, encoding: .utf8)
+                fatalError("Error JSON: \(url)")
+            }
+            return obj
         }
     }
 }

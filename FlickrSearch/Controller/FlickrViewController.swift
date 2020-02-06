@@ -25,7 +25,7 @@ class FlickrViewController: UICollectionViewController {
     /// the search text input by the user
     let searchText = BehaviorRelay(value: "")
     /// page numbers used for loading more images when neccesary
-    private var pageNumbers = (first: 1, next: 2)
+    private var pageNumbers = (first: 1, next: 1)
     /// used to get rid of resources we're not usuing anymore
     private let disposeBag = DisposeBag()
     /// we use this to control the `Y Axis ` of the searchHistoryView
@@ -115,6 +115,8 @@ class FlickrViewController: UICollectionViewController {
     
     /// used to retrieve data from the API.
     private func retrieveData(searchText: String, nextPage: Bool) {
+        self.searchText.accept(searchText)
+        print("SEARCH TEXT: \(searchText)")
         let page = nextPage ? pageNumbers.first : pageNumbers.next
         let resource = CodableResource<FlickrResponseContainer>(searchText: searchText, pageNumber: page)
         // very quickly we've devloped a scalable api for handle our network requests
@@ -200,12 +202,16 @@ extension FlickrViewController: UISearchBarDelegate {
     }
     
     func searchBarTextDidEndEditing(_ searchBar: UISearchBar) {
+        if let text = searchBar.searchTextField.text {
+            
+        }
         keyboardIsActive.accept(false)
         searchBar.searchTextField.text = nil
     }
     
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
         if let text = searchBar.text, text.count > 2 {
+            searchText.accept(text)
             searchHistoryView.addTagToStack(string: text)
             retrieveData(searchText: text, nextPage: false)
         }
